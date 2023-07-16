@@ -86,7 +86,18 @@ async function run() {
             res.send({ status: true, data: result })
         })
 
-
+        // search on title genre and author
+        app.post('/search', async (req, res) => {
+            const query = req.query.query
+            const result = await Books.find({
+                $or: [
+                    { Title: { $regex: query, $options: 'i' } },
+                    { Genre: { $regex: query, $options: 'i' } },
+                    { Author: { $regex: query, $options: 'i' } },
+                ],
+            }).toArray()
+            res.send(result)
+        })
 
 
 
