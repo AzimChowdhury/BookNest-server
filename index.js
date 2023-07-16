@@ -24,6 +24,7 @@ async function run() {
     try {
         await client.connect();
         const Books = client.db("BookNest").collection('books')
+        const Wishlists = client.db("BookNest").collection('wishlists')
         console.log("successfully connected to MongoDB!");
 
 
@@ -96,6 +97,46 @@ async function run() {
                     { Author: { $regex: query, $options: 'i' } },
                 ],
             }).toArray()
+            res.send(result)
+        })
+
+        app.post('/wishlist', async (req, res) => {
+            const { user, stage, book } = req.body;
+            const foundUser = await Wishlists.findOne({ user })
+            if (!foundUser) {
+                const newData = {
+                    user,
+                    nowReading: [],
+                    willRead: [],
+                    alreadyRead: []
+                }
+                if (stage === "willRead") {
+                    newData.willRead.push(book)
+                } else if (stage === 'nowReading') {
+                    newData.nowReading.push(book)
+                } else if (stage === 'alreadyRead') {
+                    newData.alreadyRead.push(book)
+                }
+                const result = await Wishlists.insertOne(newData)
+                res.send(result)
+            } else {
+                if (stage === "willRead") {
+                    foundUser.willRead.push(book)
+                } else if (stage === 'nowReading') {
+                    foundUser.nowReading.push(book)
+                } else if (stage === 'alreadyRead') {
+                    foundUser.alreadyRead.push(book)
+                }
+                const result = await Wishlists.updateOne({ user: user }, { $set: foundUser }, { upsert: true })
+                res.send(result)
+            }
+        })
+
+
+        // get wishlists
+        app.get('/wishlist/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await Wishlists.findOne({ user: email })
             res.send(result)
         })
 
